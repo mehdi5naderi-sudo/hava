@@ -24,6 +24,9 @@ jobs:
       - name: Fetch MET Norway forecast
         run: python3 scripts/fetch_metno.py
 
+      - name: Fetch 7Timer forecast
+        run: python3 scripts/fetch_7timer.py
+
       - uses: actions/configure-pages@v5
 
       - uses: actions/upload-pages-artifact@v3
