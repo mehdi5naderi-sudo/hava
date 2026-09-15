@@ -21,21 +21,22 @@ import java.util.Locale;
 import java.util.Map;
 
 public class WidgetSettingsActivity extends Activity {
+    // Order matches v2 defaults: dollar, euro, gold18, coin, ons first
     private static final String[] KEYS = {
-            "price_dollar_rl", "geram18", "crypto-tether-irr", "ons", "oil_brent",
-            "ime_fund_kahroba", "ime_fund_ayar", "price_eur", "price_aed", "sekee"
+            "price_dollar_rl", "price_eur", "geram18", "sekee", "ons",
+            "crypto-tether-irr", "price_aed", "oil_brent", "ime_fund_kahroba", "ime_fund_ayar"
     };
     private static final String[] NAMES = {
-            "دلار", "گرم ۱۸", "تتر", "انس", "نفت برنت",
-            "کهربا", "عیار", "یورو", "درهم", "سکه"
+            "دلار", "یورو", "طلا ۱۸", "سکه", "انس",
+            "تتر", "درهم", "نفت برنت", "کهربا", "عیار"
     };
 
     private int widgetId = AppWidgetManager.INVALID_APPWIDGET_ID;
     private boolean launchedFromIcon = false;
     private Spinner[] spinners = new Spinner[5];
-    private EditText priceSize, pctSize, timeSize, refreshSize, rowSpace, padding, bgColor, mutedColor;
-    private Spinner language, dateFormat;
-    private Switch showPct, showTime, showRefresh;
+    private EditText priceSize, pctSize, padding, bgColor;
+    private Spinner language;
+    private Switch showPct;
 
     @Override
     public void onCreate(Bundle state) {
@@ -52,9 +53,8 @@ public class WidgetSettingsActivity extends Activity {
     }
 
     private int[] getWidgetIds() {
-        AppWidgetManager manager = AppWidgetManager.getInstance(this);
-        ComponentName provider = new ComponentName(this, HavaWidgetProvider.class);
-        return manager.getAppWidgetIds(provider);
+        return AppWidgetManager.getInstance(this)
+                .getAppWidgetIds(new ComponentName(this, HavaWidgetProvider.class));
     }
 
     private void buildUi() {
@@ -64,11 +64,12 @@ public class WidgetSettingsActivity extends Activity {
         root.setPadding(dp(16), dp(12), dp(16), dp(20));
         scroll.addView(root);
 
-        TextView title = label("تنظیمات ویجت Hava");
-        title.setTextSize(22);
+        TextView title = label("تنظیمات هوا — ارز و طلا");
+        title.setTextSize(20);
+        title.setTextColor(Color.parseColor("#D4AF37"));
         root.addView(title, lp());
 
-        root.addView(label("شاخص‌ها و ترتیب"), lpTop());
+        root.addView(label("ترتیب ۵ ردیف"), lpTop());
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, NAMES);
         for (int i = 0; i < 5; i++) {
             spinners[i] = new Spinner(this);
@@ -76,33 +77,21 @@ public class WidgetSettingsActivity extends Activity {
             root.addView(spinners[i], lp());
         }
 
-        root.addView(label("اندازه فونت (sp)"), lpTop());
-        priceSize = field(root, "مبلغ", "20");
-        pctSize = field(root, "درصد", "12");
-        timeSize = field(root, "ساعت/تاریخ", "10");
-        refreshSize = field(root, "متن رفرش", "8");
+        root.addView(label("اندازه فونت"), lpTop());
+        priceSize = field(root, "قیمت (sp)", "16");
+        pctSize = field(root, "درصد (sp)", "11");
 
-        root.addView(label("زبان کل ویجت"), lpTop());
+        root.addView(label("زبان"), lpTop());
         language = spinner(root, new String[]{"فارسی", "English"});
 
-        root.addView(label("فرمت تاریخ بدون ساعت"), lpTop());
-        dateFormat = spinner(root, new String[]{"23/06", "23 - 06", "23.06", "23/06/1405", "23 شهریور", "مخفی"});
-
-        root.addView(label("نمایش اطلاعات"), lpTop());
         showPct = sw(root, "نمایش درصد تغییر", true);
-        showTime = sw(root, "نمایش ساعت/تاریخ", true);
-        showRefresh = sw(root, "نمایش زمان رفرش", true);
 
         root.addView(label("ظاهر"), lpTop());
-        bgColor = field(root, "رنگ پس‌زمینه (HEX)", "#000000");
-        mutedColor = field(root, "رنگ متن ساعت/رفرش (HEX)", "#AAAAAA");
-        rowSpace = field(root, "فاصله ردیف‌ها (dp)", "0");
-        padding = field(root, "فاصله داخلی ویجت (dp)", "5");
-
-        root.addView(label("رنگ افزایش/کاهش: سبز، قرمز، زرد"), lpTop());
+        bgColor = field(root, "رنگ پس‌زمینه (HEX)", "#0D0D0D");
+        padding = field(root, "فاصله داخلی (dp)", "8");
 
         Button save = new Button(this);
-        save.setText("ذخیره");
+        save.setText("ذخیره و اعمال");
         save.setOnClickListener(v -> save());
         root.addView(save, lpTop());
 
@@ -120,13 +109,12 @@ public class WidgetSettingsActivity extends Activity {
         Switch s = new Switch(this);
         s.setText(text);
         s.setChecked(val);
-        root.addView(s, lp());
+        root.addView(s, lpTop());
         return s;
     }
 
     private EditText field(LinearLayout root, String hint, String val) {
-        TextView l = label(hint);
-        root.addView(l, lp());
+        root.addView(label(hint), lp());
         EditText e = new EditText(this);
         e.setSingleLine(true);
         e.setText(val);
@@ -138,7 +126,7 @@ public class WidgetSettingsActivity extends Activity {
     private TextView label(String s) {
         TextView t = new TextView(this);
         t.setText(s);
-        t.setTextSize(15);
+        t.setTextSize(14);
         t.setTextColor(Color.DKGRAY);
         return t;
     }
@@ -157,43 +145,27 @@ public class WidgetSettingsActivity extends Activity {
         return (int) (v * getResources().getDisplayMetrics().density + 0.5f);
     }
 
-    private String hexColor(android.content.SharedPreferences p, String key, int def) {
-        String fallback = String.format(Locale.US, "#%06X", def & 0xFFFFFF);
-        try {
-            int value = p.getInt(key, def);
-            return String.format(Locale.US, "#%06X", value & 0xFFFFFF);
-        } catch (ClassCastException e) {
-            try {
-                return p.getString(key, fallback);
-            } catch (Exception ignored) {
-                return fallback;
-            }
-        }
-    }
-
     private void load() {
         android.content.SharedPreferences p = getSharedPreferences("widget_" + widgetId, Context.MODE_PRIVATE);
         Map<String, Integer> idx = new HashMap<>();
         for (int i = 0; i < KEYS.length; i++) idx.put(KEYS[i], i);
 
+        String[] defaults = {"price_dollar_rl", "price_eur", "geram18", "sekee", "ons"};
         for (int i = 0; i < 5; i++) {
-            String key = p.getString("key" + i, KEYS[Math.min(i, KEYS.length - 1)]);
+            String key = p.getString("key" + i, defaults[i]);
             spinners[i].setSelection(idx.containsKey(key) ? idx.get(key) : i);
         }
 
-        priceSize.setText(String.valueOf(p.getInt("priceSize", 20)));
-        pctSize.setText(String.valueOf(p.getInt("pctSize", 12)));
-        timeSize.setText(String.valueOf(p.getInt("timeSize", 10)));
-        refreshSize.setText(String.valueOf(p.getInt("refreshSize", 8)));
-        language.setSelection(p.getString("lang", "fa").equals("en") ? 1 : 0);
-        dateFormat.setSelection(p.getInt("dateFormat", 0));
+        priceSize.setText(String.valueOf(p.getInt("priceSize", 16)));
+        pctSize.setText(String.valueOf(p.getInt("pctSize", 11)));
+        language.setSelection("en".equals(p.getString("lang", "fa")) ? 1 : 0);
         showPct.setChecked(p.getBoolean("showPct", true));
-        showTime.setChecked(p.getBoolean("showTime", true));
-        showRefresh.setChecked(p.getBoolean("showRefresh", true));
-        bgColor.setText(hexColor(p, "bgColor", Color.BLACK));
-        mutedColor.setText(hexColor(p, "mutedColor", Color.LTGRAY));
-        rowSpace.setText(String.valueOf(p.getInt("rowSpace", 0)));
-        padding.setText(String.valueOf(p.getInt("padding", 5)));
+        try {
+            bgColor.setText(String.format(Locale.US, "#%06X", p.getInt("bgColor", 0x0D0D0D) & 0xFFFFFF));
+        } catch (Exception e) {
+            bgColor.setText("#0D0D0D");
+        }
+        padding.setText(String.valueOf(p.getInt("padding", 8)));
     }
 
     private int num(EditText e, int def, int min, int max) {
@@ -217,25 +189,17 @@ public class WidgetSettingsActivity extends Activity {
         for (int i = 0; i < 5; i++) {
             e.putString("key" + i, KEYS[spinners[i].getSelectedItemPosition()]);
         }
-        e.putInt("priceSize", num(priceSize, 20, 8, 40))
-                .putInt("pctSize", num(pctSize, 12, 6, 24))
-                .putInt("timeSize", num(timeSize, 10, 6, 20))
-                .putInt("refreshSize", num(refreshSize, 8, 5, 18))
+        e.putInt("priceSize", num(priceSize, 16, 10, 28))
+                .putInt("pctSize", num(pctSize, 11, 8, 18))
                 .putString("lang", language.getSelectedItemPosition() == 1 ? "en" : "fa")
-                .putInt("dateFormat", dateFormat.getSelectedItemPosition())
                 .putBoolean("showPct", showPct.isChecked())
-                .putBoolean("showTime", showTime.isChecked())
-                .putBoolean("showRefresh", showRefresh.isChecked())
-                .putInt("bgColor", color(bgColor.getText().toString(), Color.BLACK))
-                .putInt("mutedColor", color(mutedColor.getText().toString(), Color.LTGRAY))
-                .putInt("rowSpace", num(rowSpace, 0, 0, 12))
-                .putInt("padding", num(padding, 5, 0, 20))
+                .putInt("bgColor", color(bgColor.getText().toString(), 0xFF0D0D0D))
+                .putInt("padding", num(padding, 8, 2, 20))
                 .apply();
 
         AppWidgetManager manager = AppWidgetManager.getInstance(this);
         if (launchedFromIcon) {
-            int[] ids = getWidgetIds();
-            for (int id : ids) {
+            for (int id : getWidgetIds()) {
                 if (id != widgetId) copySettings(widgetId, id);
                 manager.updateAppWidget(id, HavaWidgetProvider.buildViews(this, id));
             }
@@ -253,21 +217,14 @@ public class WidgetSettingsActivity extends Activity {
         android.content.SharedPreferences from = getSharedPreferences("widget_" + fromId, Context.MODE_PRIVATE);
         android.content.SharedPreferences.Editor to = getSharedPreferences("widget_" + toId, Context.MODE_PRIVATE).edit();
         for (int i = 0; i < 5; i++) {
-            to.putString("key" + i, from.getString("key" + i, KEYS[Math.min(i, KEYS.length - 1)]));
+            to.putString("key" + i, from.getString("key" + i, KEYS[i]));
         }
-        to.putInt("priceSize", from.getInt("priceSize", 20))
-                .putInt("pctSize", from.getInt("pctSize", 12))
-                .putInt("timeSize", from.getInt("timeSize", 10))
-                .putInt("refreshSize", from.getInt("refreshSize", 8))
+        to.putInt("priceSize", from.getInt("priceSize", 16))
+                .putInt("pctSize", from.getInt("pctSize", 11))
                 .putString("lang", from.getString("lang", "fa"))
-                .putInt("dateFormat", from.getInt("dateFormat", 0))
                 .putBoolean("showPct", from.getBoolean("showPct", true))
-                .putBoolean("showTime", from.getBoolean("showTime", true))
-                .putBoolean("showRefresh", from.getBoolean("showRefresh", true))
-                .putInt("bgColor", from.getInt("bgColor", Color.BLACK))
-                .putInt("mutedColor", from.getInt("mutedColor", Color.LTGRAY))
-                .putInt("rowSpace", from.getInt("rowSpace", 0))
-                .putInt("padding", from.getInt("padding", 5))
+                .putInt("bgColor", from.getInt("bgColor", 0xFF0D0D0D))
+                .putInt("padding", from.getInt("padding", 8))
                 .apply();
     }
 }
