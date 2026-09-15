@@ -27,14 +27,52 @@ import java.util.Map;
 
 public class HavaWidgetProvider extends AppWidgetProvider {
     private static final String ACTION_REFRESH = "com.mehdi.hava.REFRESH";
-    private static final String[] DEFAULT_KEYS = {"price_dollar_rl", "geram18", "crypto-tether-irr", "ons", "oil_brent"};
+
+    private static final String[] DEFAULT_KEYS = {
+            "price_dollar_rl", "price_eur", "geram18", "sekee", "ons"
+    };
+    private static final String[] DEFAULT_LABELS_FA = {
+            "دلار", "یورو", "طلا ۱۸", "سکه", "انس"
+    };
+    private static final String[] DEFAULT_LABELS_EN = {
+            "USD", "EUR", "Gold 18", "Coin", "Ounce"
+    };
+
+    private static final int[] LABEL_IDS = {R.id.label1, R.id.label2, R.id.label3, R.id.label4, R.id.label5};
     private static final int[] PRICE_IDS = {R.id.price1, R.id.price2, R.id.price3, R.id.price4, R.id.price5};
     private static final int[] PCT_IDS = {R.id.pct1, R.id.pct2, R.id.pct3, R.id.pct4, R.id.pct5};
-    private static final int[] TIME_IDS = {R.id.time1, R.id.time2, R.id.time3, R.id.time4, R.id.time5};
-    private static final int[] ROW_IDS = {R.id.row1, R.id.row2, R.id.row3, R.id.row4, R.id.row5};
-    private static final int GREEN = Color.rgb(85, 200, 120);
-    private static final int RED = Color.rgb(239, 102, 102);
-    private static final int YELLOW = Color.rgb(229, 192, 74);
+
+    private static final int GREEN = Color.rgb(61, 220, 151);
+    private static final int RED = Color.rgb(255, 107, 107);
+    private static final int GOLD = Color.rgb(201, 162, 39);
+    private static final int GOLD_DIM = Color.rgb(139, 115, 85);
+    private static final int BG = Color.rgb(13, 13, 13);
+
+    private static final Map<String, String> LABELS_FA = new HashMap<>();
+    private static final Map<String, String> LABELS_EN = new HashMap<>();
+    static {
+        LABELS_FA.put("price_dollar_rl", "دلار");
+        LABELS_FA.put("price_eur", "یورو");
+        LABELS_FA.put("price_aed", "درهم");
+        LABELS_FA.put("geram18", "طلا ۱۸");
+        LABELS_FA.put("sekee", "سکه");
+        LABELS_FA.put("ons", "انس");
+        LABELS_FA.put("crypto-tether-irr", "تتر");
+        LABELS_FA.put("oil_brent", "نفت");
+        LABELS_FA.put("ime_fund_kahroba", "کهربا");
+        LABELS_FA.put("ime_fund_ayar", "عیار");
+
+        LABELS_EN.put("price_dollar_rl", "USD");
+        LABELS_EN.put("price_eur", "EUR");
+        LABELS_EN.put("price_aed", "AED");
+        LABELS_EN.put("geram18", "Gold 18");
+        LABELS_EN.put("sekee", "Coin");
+        LABELS_EN.put("ons", "Ounce");
+        LABELS_EN.put("crypto-tether-irr", "USDT");
+        LABELS_EN.put("oil_brent", "Brent");
+        LABELS_EN.put("ime_fund_kahroba", "Kahroba");
+        LABELS_EN.put("ime_fund_ayar", "Ayar");
+    }
 
     @Override
     public void onUpdate(Context c, AppWidgetManager m, int[] ids) {
@@ -48,7 +86,8 @@ public class HavaWidgetProvider extends AppWidgetProvider {
     public void onReceive(Context c, Intent i) {
         super.onReceive(c, i);
         if (ACTION_REFRESH.equals(i.getAction())) {
-            int[] ids = AppWidgetManager.getInstance(c).getAppWidgetIds(new ComponentName(c, HavaWidgetProvider.class));
+            int[] ids = AppWidgetManager.getInstance(c)
+                    .getAppWidgetIds(new ComponentName(c, HavaWidgetProvider.class));
             refresh(c, ids);
         }
     }
@@ -56,36 +95,36 @@ public class HavaWidgetProvider extends AppWidgetProvider {
     public static RemoteViews buildViews(Context c, int id) {
         RemoteViews v = new RemoteViews(c.getPackageName(), R.layout.widget);
         android.content.SharedPreferences p = c.getSharedPreferences("widget_" + id, Context.MODE_PRIVATE);
-        int bg = p.getInt("bgColor", Color.BLACK);
-        int muted = p.getInt("mutedColor", Color.LTGRAY);
-        int pad = p.getInt("padding", 5);
-        int gap = p.getInt("rowSpace", 0);
-        float ps = p.getInt("priceSize", 20);
-        float pct = p.getInt("pctSize", 12);
-        float ts = p.getInt("timeSize", 10);
-        float rs = p.getInt("refreshSize", 8);
+
+        int bg = p.getInt("bgColor", BG);
+        int muted = p.getInt("mutedColor", GOLD_DIM);
+        int pad = p.getInt("padding", 8);
+        float priceSize = p.getInt("priceSize", 16);
+        float pctSize = p.getInt("pctSize", 11);
+        float labelSize = p.getInt("labelSize", 12);
         boolean showPct = p.getBoolean("showPct", true);
-        boolean showTime = p.getBoolean("showTime", true);
-        boolean showRefresh = p.getBoolean("showRefresh", true);
+        boolean en = "en".equals(p.getString("lang", "fa"));
 
         v.setInt(R.id.root, "setBackgroundColor", bg);
         v.setViewPadding(R.id.root, pad, pad, pad, pad);
+        v.setTextColor(R.id.headerTitle, GOLD);
+        v.setTextViewText(R.id.headerTitle, en ? "Hava" : "هوا");
+        v.setTextColor(R.id.requestTime, muted);
+        v.setTextColor(R.id.settingsButton, muted);
 
         for (int i = 0; i < 5; i++) {
-            v.setTextViewTextSize(PRICE_IDS[i], 2, ps);
-            v.setTextViewTextSize(PCT_IDS[i], 2, pct);
-            v.setTextViewTextSize(TIME_IDS[i], 2, ts);
-            if (gap > 0) {
-                v.setViewLayoutMargin(ROW_IDS[i], RemoteViews.MARGIN_BOTTOM, gap, android.util.TypedValue.COMPLEX_UNIT_DIP);
-            }
-            v.setTextColor(TIME_IDS[i], muted);
+            String key = p.getString("key" + i, DEFAULT_KEYS[i]);
+            String label = en
+                    ? LABELS_EN.getOrDefault(key, DEFAULT_LABELS_EN[i])
+                    : LABELS_FA.getOrDefault(key, DEFAULT_LABELS_FA[i]);
+            v.setTextViewText(LABEL_IDS[i], label);
+            boolean isGold = "geram18".equals(key) || "sekee".equals(key) || "ons".equals(key);
+            v.setTextColor(LABEL_IDS[i], isGold ? GOLD : GOLD_DIM);
+            v.setTextViewTextSize(LABEL_IDS[i], 2, labelSize);
+            v.setTextViewTextSize(PRICE_IDS[i], 2, priceSize);
+            v.setTextViewTextSize(PCT_IDS[i], 2, pctSize);
             v.setViewVisibility(PCT_IDS[i], showPct ? View.VISIBLE : View.GONE);
-            v.setViewVisibility(TIME_IDS[i], showTime ? View.VISIBLE : View.GONE);
         }
-
-        v.setTextViewTextSize(R.id.requestTime, 2, rs);
-        v.setTextColor(R.id.requestTime, muted);
-        v.setViewVisibility(R.id.requestTime, showRefresh ? View.VISIBLE : View.GONE);
 
         Intent r = new Intent(c, HavaWidgetProvider.class)
                 .setAction(ACTION_REFRESH)
@@ -101,7 +140,7 @@ public class HavaWidgetProvider extends AppWidgetProvider {
         PendingIntent sp = PendingIntent.getActivity(c, id + 10000, s,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         v.setOnClickPendingIntent(R.id.settingsButton, sp);
-        v.setTextViewText(R.id.settingsButton, "⚙");
+
         return v;
     }
 
@@ -127,8 +166,7 @@ public class HavaWidgetProvider extends AppWidgetProvider {
                 con.setReadTimeout(10000);
                 con.setUseCaches(false);
                 con.setRequestProperty("Cache-Control", "no-cache");
-                int code = con.getResponseCode();
-                if (code != 200) throw new Exception();
+                if (con.getResponseCode() != 200) throw new Exception();
                 BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream()));
                 StringBuilder sb = new StringBuilder();
                 String line;
@@ -164,28 +202,32 @@ public class HavaWidgetProvider extends AppWidgetProvider {
         RemoteViews v = buildViews(c, id);
         android.content.SharedPreferences p = c.getSharedPreferences("widget_" + id, Context.MODE_PRIVATE);
         boolean en = "en".equals(p.getString("lang", "fa"));
+
         for (int i = 0; i < 5; i++) {
             String k = p.getString("key" + i, DEFAULT_KEYS[i]);
             JSONObject o = d.get(k);
-            String price = "—", pct = "—", time = "—";
+            String price = "—";
+            String pct = "—";
             int color = Color.LTGRAY;
+
             if (o != null) {
                 price = price(o, k);
                 double dp = o.optDouble("dp", Double.NaN);
                 String dt = o.optString("dt", "");
                 if (!Double.isNaN(dp)) {
-                    pct = percent(dp, en);
-                    color = "high".equalsIgnoreCase(dt) ? GREEN : "low".equalsIgnoreCase(dt) ? RED : YELLOW;
+                    String arrow = "high".equalsIgnoreCase(dt) ? "▲ " : "low".equalsIgnoreCase(dt) ? "▼ " : "● ";
+                    pct = arrow + String.format(Locale.US, "%.2f%%", Math.abs(dp));
+                    color = "high".equalsIgnoreCase(dt) ? GREEN : "low".equalsIgnoreCase(dt) ? RED : GOLD;
                 }
             }
-            time = formatTimeOrDate(o == null ? "—" : o.optString("t", "—"), p.getInt("dateFormat", 0), en);
+
             v.setTextViewText(PRICE_IDS[i], digits(price, en));
-            v.setTextColor(PRICE_IDS[i], color);
+            v.setTextColor(PRICE_IDS[i], Color.rgb(245, 240, 230));
             v.setTextViewText(PCT_IDS[i], digits(pct, en));
             v.setTextColor(PCT_IDS[i], color);
-            v.setTextViewText(TIME_IDS[i], digits(time, en));
         }
-        v.setTextViewText(R.id.requestTime, (en ? "Refresh: " : "رفرش: ") + digits(request, en));
+
+        v.setTextViewText(R.id.requestTime, digits(request, en));
         m.updateAppWidget(id, v);
     }
 
@@ -205,10 +247,6 @@ public class HavaWidgetProvider extends AppWidgetProvider {
         }
     }
 
-    private static String percent(double p, boolean en) {
-        return String.format(Locale.US, "%.2f%%", Math.abs(p));
-    }
-
     private static String now() {
         return new java.text.SimpleDateFormat("HH:mm", Locale.US).format(new java.util.Date());
     }
@@ -223,45 +261,5 @@ public class HavaWidgetProvider extends AppWidgetProvider {
         return s.replace('0', '۰').replace('1', '۱').replace('2', '۲').replace('3', '۳')
                 .replace('4', '۴').replace('5', '۵').replace('6', '۶').replace('7', '۷')
                 .replace('8', '۸').replace('9', '۹').replace(',', '٬').replace('.', '٫').replace('%', '٪');
-    }
-
-    private static String formatTimeOrDate(String t, int fmt, boolean en) {
-        if (t == null || t.isEmpty() || "—".equals(t)) return "—";
-        if (!t.matches(".*[۰-۹0-9].*")) return t;
-        if (t.contains(" ") && !t.contains(":")) {
-            String[] parts = t.trim().split("\\s+");
-            if (parts.length >= 2) {
-                int day = parseNum(parts[0]);
-                int month = month(parts[1]);
-                if (fmt == 5) return "";
-                String d = String.format(Locale.US, "%02d", day);
-                String m = String.format(Locale.US, "%02d", month);
-                switch (fmt) {
-                    case 1: return d + " - " + m;
-                    case 2: return d + "." + m;
-                    case 3: return d + "/" + m + "/1405";
-                    case 4: return d + " " + parts[1];
-                    default: return d + "/" + m;
-                }
-            }
-        }
-        return t;
-    }
-
-    private static int parseNum(String s) {
-        try {
-            String x = s.replace('۰', '0').replace('۱', '1').replace('۲', '2').replace('۳', '3')
-                    .replace('۴', '4').replace('۵', '5').replace('۶', '6').replace('۷', '7')
-                    .replace('۸', '8').replace('۹', '9').replaceAll("[^0-9]", "");
-            return Integer.parseInt(x);
-        } catch (Exception e) {
-            return 0;
-        }
-    }
-
-    private static int month(String s) {
-        String[] m = {"فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"};
-        for (int i = 0; i < m.length; i++) if (s.contains(m[i])) return i + 1;
-        return 0;
     }
 }
