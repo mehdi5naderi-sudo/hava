@@ -1,3 +1,0 @@
-# hava
-
-Repository cleared.
